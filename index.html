@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>SAMVIDHAN QUEST - Constitution Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --glass-bg: rgba(255, 255, 255, 0.1);
+        --glass-border: rgba(255, 255, 255, 0.2);
+        --glass-blur: blur(12px);
+      }
+      body {
+        font-family: 'Press Start 2P', cursive;
+        background-color: #000;
+        color: #fff;
+        margin: 0;
+        overflow: hidden;
+        image-rendering: pixelated;
+        touch-action: none;
+      }
+      .gb-screen {
+        background-color: #d0f0d0;
+        box-shadow: inset 0 0 60px rgba(0,0,0,0.3);
+        position: relative;
+        image-rendering: pixelated;
+      }
+      .gb-screen::before {
+        content: " ";
+        display: block;
+        position: absolute;
+        top: 0; left: 0; bottom: 0; right: 0;
+        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.05) 50%), 
+                    linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
+        z-index: 100;
+        background-size: 100% 2px, 3px 100%;
+        pointer-events: none;
+      }
+      
+      .tile { width: 48px; height: 48px; position: absolute; }
+      .tile-GRASS { background-color: #90c090; }
+      .tile-TALL_GRASS {
+        background-color: #90c090;
+        background-image: url('https://i.postimg.cc/DfGhSq4K/Screenshot-2026-02-04-at-10-27-06-AM.png');
+        background-position: -242px -192px;
+        background-size: 680px;
+      }
+      .tile-PATH { background-color: #d8c090; border: 1px solid rgba(0,0,0,0.05); }
+      .tile-WATER { background-color: #60a0f0; position: relative; }
+      .tile-WATER::after { content: "~"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: rgba(255,255,255,0.3); font-size: 20px; }
+      .tile-WALL { background-color: #404040; background-image: url('https://i.postimg.cc/bJszCWvm/2d.gif'); background-size: contain; background-repeat: no-repeat; background-position: bottom center; }
+
+      /* BATTLE BACKGROUNDS */
+      .battle-bg-grass { background: linear-gradient(to bottom, #78C850 50%, #50A028 50%); background-size: 100% 100%; }
+      .battle-bg-court { background: linear-gradient(to bottom, #d8c090 50%, #c0a070 50%); background-size: 100% 100%; }
+      .battle-bg-indoor { background: linear-gradient(to bottom, #E0E0E0 50%, #A0A0A0 50%); background-size: 100% 100%; }
+
+      .battle-platform {
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 120%;
+        height: 20px;
+        background: rgba(0,0,0,0.1);
+        border-radius: 50%;
+        z-index: 5;
+      }
+
+      /* BATTLE ANIMATIONS */
+      @keyframes shake { 0%, 100% { transform: translate(0,0); } 10%, 30%, 50%, 70%, 90% { transform: translate(-4px, 0); } 20%, 40%, 60%, 80% { transform: translate(4px, 0); } }
+      .animate-shake { animation: shake 0.5s ease-in-out; }
+
+      @keyframes lunge { 0% { transform: translateX(0); } 50% { transform: translateX(60px) scale(1.1); } 100% { transform: translateX(0); } }
+      .animate-lunge { animation: lunge 0.4s ease-out; }
+
+      @keyframes withdraw {
+        0% { transform: scale(1.3) translateY(0); filter: brightness(1) sepia(0); opacity: 1; }
+        100% { transform: scale(0.1) translateY(40px); filter: brightness(5) sepia(1) hue-rotate(-90deg); opacity: 0; }
+      }
+      .animate-withdraw { animation: withdraw 0.5s forwards ease-in; }
+
+      /* VFX */
+      @keyframes slash { 0% { clip-path: inset(0 100% 0 0); opacity: 1; } 50% { clip-path: inset(0 0 0 0); opacity: 1; } 100% { clip-path: inset(0 0 0 100%); opacity: 0; } }
+      .vfx-slash { position: absolute; inset: -20%; background: white; animation: slash 0.3s forwards; z-index: 60; transform: skewX(-20deg) scale(1.5); }
+
+      @keyframes beam-fire { 0% { width: 0; left: 0; opacity: 1; } 50% { width: 100%; left: 0; opacity: 1; } 100% { width: 100%; left: 100%; opacity: 0; } }
+      .vfx-beam { position: absolute; top: 50%; width: 100%; height: 24px; background: linear-gradient(90deg, #fff, #ffd700); box-shadow: 0 0 20px #ffd700; border-radius: 12px; animation: beam-fire 0.5s forwards; z-index: 60; }
+
+      @keyframes bolt-vfx { 0%, 100% { opacity: 0; } 10%, 30%, 50%, 70%, 90% { opacity: 1; } }
+      .vfx-bolt { position: absolute; inset: 0; background: #ffff00; clip-path: polygon(40% 0%, 50% 40%, 30% 40%, 60% 100%, 50% 60%, 70% 60%); animation: bolt-vfx 0.5s steps(2); z-index: 60; }
+
+      @keyframes pulse-vfx { 0% { transform: scale(0.1); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
+      .vfx-pulse { position: absolute; inset: 0; border: 8px solid #4facfe; border-radius: 50%; animation: pulse-vfx 0.6s ease-out forwards; z-index: 60; }
+
+      /* CAPTURE ANIMATIONS */
+      @keyframes capture-suck { 
+        0% { transform: scale(1) translateY(0); filter: brightness(1) sepia(0); } 
+        100% { transform: scale(0) translateY(-20px); filter: brightness(5) sepia(1) hue-rotate(90deg); opacity: 0; } 
+      }
+      .animate-capture-suck { animation: capture-suck 0.6s forwards cubic-bezier(0.55, 0.055, 0.675, 0.19); }
+
+      @keyframes summon-throw { 0% { transform: translate(-150px, 150px) scale(0.4) rotate(0deg); opacity: 0; } 40% { transform: translate(-50px, -50px) scale(1.2) rotate(360deg); opacity: 1; } 100% { transform: translate(0, 0) scale(1) rotate(720deg); } }
+      .animate-summon-throw { animation: summon-throw 0.6s forwards cubic-bezier(0.25, 1, 0.5, 1); }
+
+      @keyframes capture-throw { 0% { transform: translate(-250px, 200px) scale(0.4) rotate(0deg); opacity: 0; } 40% { transform: translate(-50px, -100px) scale(1.2) rotate(360deg); opacity: 1; } 100% { transform: translate(0, 0) scale(1) rotate(720deg); } }
+      .animate-capture-throw { animation: capture-throw 0.7s forwards cubic-bezier(0.25, 1, 0.5, 1); }
+
+      @keyframes ball-shake { 0% { transform: rotate(0); } 25% { transform: rotate(-20deg); } 50% { transform: rotate(20deg); } 75% { transform: rotate(-10deg); } 100% { transform: rotate(0); } }
+      .animate-ball-shake { animation: ball-shake 0.4s ease-in-out; }
+
+      @keyframes ball-click {
+        0% { transform: translate(-50%, -50%) scale(1.5); filter: brightness(3); opacity: 0; }
+        50% { transform: translate(-50%, -50%) scale(1.2); filter: brightness(2); opacity: 1; }
+        100% { transform: translate(-50%, -50%) scale(1.4); filter: brightness(1); opacity: 1; }
+      }
+      .animate-ball-click { animation: ball-click 0.3s forwards ease-out; }
+
+      @keyframes ball-burst {
+        0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        10% { transform: translate(-50%, -50%) scale(1.3); filter: brightness(2); }
+        100% { transform: translate(-50%, -50%) scale(4); opacity: 0; filter: brightness(5); }
+      }
+      .animate-ball-burst { animation: ball-burst 0.4s forwards ease-out; }
+
+      @keyframes fade-out-down { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(180px); } }
+      .animate-faint { animation: fade-out-down 1.2s forwards ease-in; }
+
+      /* UI STYLES */
+      .hp-container { 
+        height: 12px; 
+        background: #222; 
+        border: 2px solid #000; 
+        position: relative; 
+        overflow: hidden; 
+        border-radius: 6px; 
+      }
+      .hp-bar { height: 100%; transition: width 0.6s ease-in-out; }
+      .hp-green { background: #00ff00; }
+      .hp-yellow { background: #ffff00; }
+      .hp-red { background: #ff0000; }
+
+      .liquid-glass {
+        background: var(--glass-bg);
+        backdrop-filter: var(--glass-blur);
+        -webkit-backdrop-filter: var(--glass-blur);
+        border: 1px solid var(--glass-border);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      }
+
+      .writ-ball { 
+        width: 32px; 
+        height: 32px; 
+        background: linear-gradient(to bottom, #f00 50%, #fff 50%); 
+        border: 2px solid #000; 
+        border-radius: 50%; 
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+      }
+      .writ-ball::after {
+        content: "";
+        position: absolute;
+        top: 50%; left: 50%;
+        width: 10px; height: 10px;
+        background: #fff;
+        border: 2px solid #000;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+      }
+      .writ-ball::before {
+        content: "";
+        position: absolute;
+        top: 50%; left: 0;
+        width: 100%; height: 2px;
+        background: #000;
+        transform: translateY(-50%);
+      }
+
+      .btn-press:active { transform: scale(0.92); filter: brightness(0.8); }
+      
+      @media (max-width: 640px) {
+        .gameboy-container {
+          transform: scale(0.75);
+        }
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.39.0",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
